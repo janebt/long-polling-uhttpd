@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# get_motion_detection_status
+get_motion_detection() {
+#sleep 10
+export get_motion_detection_string='{"motion_detection":{"name":"motion_status"},"method":"get"}'
+luajit -e 'json=os.getenv("get_motion_detection_string")
+file_func = loadfile("/usr/lib/lua/luci/onvifd-luci/onvifd-luci")
+file_func()
+entrance(json)'
+}
+
+listen(){
+uci set motion_detection.motion_status.motion_exception_status="off"
+echo "motion_detection was already on ..." > /log.text
+local request
+local count=0
+read request
+echo "$request" > /log.text
+if [[ "$request" == "quest exception status" ]]; then
+	while true; do
+		echo "while true ..." >> /log.text
+			if [ 10 -lt "$count" ];then
+				echo -e "timeout!\n\n"
+				break
+			fi
+			if [ "on" = "`uci get motion_detection.motion_status.motion_exception_status`" ]; then
+				uci set motion_detection.motion_status.motion_exception_status="666"
+				echo "while on ..." >> /log.text
+				break
+			fi
+			sleep 1
+			$((count++))
+			echo $count >> /log.text
+	done
+return
+fi
+}
+
+listen
